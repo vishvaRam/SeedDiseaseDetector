@@ -1,8 +1,8 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:tflite/tflite.dart';
 
 // ignore: must_be_immutable
 class HomePage extends StatefulWidget {
@@ -72,9 +72,21 @@ Widget homePageAppBar(context, {bool isDark}) {
   );
 }
 
-Widget mainContent(context,{Function setStateOfPath}) {
-
+Widget mainContent(
+  context,
+) {
   final _picker = ImagePicker();
+
+  runOnImage(String path) async {
+    var recognitions = await Tflite.runModelOnImage(
+      path: path, // required
+      // imageMean: 0.0,   // defaults to 117.0
+      // imageStd: 255.0,  // defaults to 1.0
+      numResults: 1, // defaults to 5
+      // threshold: 0.2,   // defaults to 0.1
+      // asynch: true      // defaults to true
+    );
+  }
 
   return Container(
     padding: EdgeInsets.symmetric(horizontal: 20.0),
@@ -99,33 +111,65 @@ Widget mainContent(context,{Function setStateOfPath}) {
                 Flexible(
                     flex: 1,
                     child: RaisedButton.icon(
-                        onPressed: () async{
-                          PickedFile image = await _picker.getImage(source: ImageSource.camera,imageQuality: 80);
-                          final File file = File(image.path);
-                          setStateOfPath(file);
-                          print(file);
-                        },
-                        icon: Icon(Icons.camera_alt, color: Colors.white,
-                          size: 26.0,),
-                        label: Text("Camera",style: TextStyle(color: Colors.white,fontSize: 18.0))
-                    ,color: Colors.blue,
-                    )
-                ),
+                      onPressed: () async {
+                        try {
+                          PickedFile image = await _picker.getImage(
+                              source: ImageSource.camera, imageQuality: 80);
+                          if (image != null) {
+                            final File file = File(image.path);
+                            print(file.toString());
+                          } else {
+                            final snackBar =
+                                SnackBar(content: Text('No image selected.'));
+                            Scaffold.of(context).showSnackBar(snackBar);
+                            print('No image selected.');
+                          }
+                        } catch (e) {
+                          print(e);
+                          final snackBar =
+                              SnackBar(content: Text('Something went wrong!'));
+                          Scaffold.of(context).showSnackBar(snackBar);
+                        }
+                      },
+                      icon: Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 26.0,
+                      ),
+                      label: Text("Camera",
+                          style:
+                              TextStyle(color: Colors.white, fontSize: 18.0)),
+                      color: Colors.blue,
+                    )),
                 Flexible(
                     flex: 1,
                     child: RaisedButton.icon(
-                      onPressed: () async{
-                        PickedFile image = await _picker.getImage(source: ImageSource.gallery,imageQuality: 80);
-                        final File file = File(image.path);
-                        setStateOfPath(file);
-                        print(file);
+                      onPressed: () async {
+                        try {
+                          PickedFile image = await _picker.getImage(
+                              source: ImageSource.gallery, imageQuality: 80);
+                          if (image != null) {
+                            final File file = File(image.path);
+                            print(file.toString());
+                          } else {
+                            final snackBar =
+                                SnackBar(content: Text('No image selected.'));
+                            Scaffold.of(context).showSnackBar(snackBar);
+                            print('No image selected.');
+                          }
+                        } catch (e) {
+                          print(e);
+                        }
                       },
                       icon: Icon(
                         Icons.image,
                         color: Colors.white,
                         size: 26.0,
                       ),
-                      label: Text("Gallery",style: TextStyle(color: Colors.white,fontSize: 18.0),),
+                      label: Text(
+                        "Gallery",
+                        style: TextStyle(color: Colors.white, fontSize: 18.0),
+                      ),
                       color: Colors.blue,
                     )),
               ],
@@ -138,19 +182,34 @@ Widget mainContent(context,{Function setStateOfPath}) {
 }
 
 class _HomePageState extends State<HomePage> {
-
-  File imagePath ;
-
   setTheme(value) {
     setState(() {
       widget.isDark = value;
     });
   }
 
-  FunToSetState(File FileName){
-    setState(() {
-      imagePath = FileName;
-    });
+  loadModel() async {
+    String res = await Tflite.loadModel(
+        model: "assets/output.tflite",
+        labels: "assets/Labels.txt",
+        useGpuDelegate: false);
+    print(res);
+  }
+
+  @override
+  void initState() {
+    loadModel();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    closeTflite();
+    super.dispose();
+  }
+
+  closeTflite() async {
+    await Tflite.close();
   }
 
   @override
@@ -162,12 +221,14 @@ class _HomePageState extends State<HomePage> {
         child: Builder(
           builder: (context) => Scaffold(
             appBar: homePageAppBar(context, isDark: widget.isDark),
-            body: Column(
-              children: [
-                Flexible(flex: 2, child: Container()),
-                Flexible(flex: 3, child: mainContent(context,setStateOfPath: FunToSetState )),
-                Flexible(flex: 2, child: Container()),
-              ],
+            body: Builder(
+              builder: (context) => Column(
+                children: [
+                  Flexible(flex: 2, child: Container()),
+                  Flexible(flex: 3, child: mainContent(context)),
+                  Flexible(flex: 2, child: Container()),
+                ],
+              ),
             ),
             drawer: homePageDrawer(isDark: widget.isDark, setTheme: setTheme),
           ),
