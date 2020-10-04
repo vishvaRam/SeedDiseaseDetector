@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tflite/tflite.dart';
+import 'package:path_provider/path_provider.dart';
 
 // ignore: must_be_immutable
 class HomePage extends StatefulWidget {
@@ -72,22 +73,55 @@ Widget homePageAppBar(context, {bool isDark}) {
   );
 }
 
-Widget mainContent(
-  context,
-) {
+closeTflite() async {
+  await Tflite.close();
+}
+
+Widget mainContent(context) {
+
   final _picker = ImagePicker();
 
-  runOnImage(String path) async {
+  Future<void> runOnImage(File file) async {
+
+    // Get application dir
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    String imgPath = appDocDir.uri.resolve("image.jpg").path;
+    File imgFile = await file.copy(imgPath);
+    print(imgFile.path);
+
+    // Image recognition using tfLite
     var recognitions = await Tflite.runModelOnImage(
-      path: path, // required
+      path: imgFile.path, // required
       // imageMean: 0.0,   // defaults to 117.0
-      // imageStd: 255.0,  // defaults to 1.0
+      imageStd: 255.0,  // defaults to 1.0
       numResults: 1, // defaults to 5
-      // threshold: 0.2,   // defaults to 0.1
-      // asynch: true      // defaults to true
+      threshold: 0.2,   // defaults to 0.1
     );
+    print(recognitions);
   }
 
+  // Click
+  onClick(ImageSource source) async {
+    try {
+      PickedFile image =
+          await _picker.getImage(source: source, imageQuality: 50,maxHeight: 256.0,maxWidth: 256.0 );
+      if (image != null) {
+        final File file = File(image.path);
+        await runOnImage(file);
+      } else {
+        final snackBar = SnackBar(content: Text('No image selected.'));
+        Scaffold.of(context).showSnackBar(snackBar);
+        print('No image selected.');
+      }
+    } catch (e) {
+      print(e);
+      final snackBar = SnackBar(content: Text('Something went wrong!'));
+      Scaffold.of(context).showSnackBar(snackBar);
+      print('Something went wrong!');
+    }
+  }
+
+  // UI
   return Container(
     padding: EdgeInsets.symmetric(horizontal: 20.0),
     width: MediaQuery.of(context).size.width,
@@ -112,24 +146,7 @@ Widget mainContent(
                     flex: 1,
                     child: RaisedButton.icon(
                       onPressed: () async {
-                        try {
-                          PickedFile image = await _picker.getImage(
-                              source: ImageSource.camera, imageQuality: 80);
-                          if (image != null) {
-                            final File file = File(image.path);
-                            print(file.toString());
-                          } else {
-                            final snackBar =
-                                SnackBar(content: Text('No image selected.'));
-                            Scaffold.of(context).showSnackBar(snackBar);
-                            print('No image selected.');
-                          }
-                        } catch (e) {
-                          print(e);
-                          final snackBar =
-                              SnackBar(content: Text('Something went wrong!'));
-                          Scaffold.of(context).showSnackBar(snackBar);
-                        }
+                       onClick(ImageSource.camera);
                       },
                       icon: Icon(
                         Icons.camera_alt,
@@ -145,21 +162,7 @@ Widget mainContent(
                     flex: 1,
                     child: RaisedButton.icon(
                       onPressed: () async {
-                        try {
-                          PickedFile image = await _picker.getImage(
-                              source: ImageSource.gallery, imageQuality: 80);
-                          if (image != null) {
-                            final File file = File(image.path);
-                            print(file.toString());
-                          } else {
-                            final snackBar =
-                                SnackBar(content: Text('No image selected.'));
-                            Scaffold.of(context).showSnackBar(snackBar);
-                            print('No image selected.');
-                          }
-                        } catch (e) {
-                          print(e);
-                        }
+                        onClick(ImageSource.gallery);
                       },
                       icon: Icon(
                         Icons.image,
@@ -182,12 +185,14 @@ Widget mainContent(
 }
 
 class _HomePageState extends State<HomePage> {
+
   setTheme(value) {
     setState(() {
       widget.isDark = value;
     });
   }
 
+  // Loading TF model
   loadModel() async {
     String res = await Tflite.loadModel(
         model: "assets/output.tflite",
@@ -196,6 +201,7 @@ class _HomePageState extends State<HomePage> {
     print(res);
   }
 
+  // Initial state
   @override
   void initState() {
     loadModel();
@@ -208,9 +214,6 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  closeTflite() async {
-    await Tflite.close();
-  }
 
   @override
   Widget build(BuildContext context) {
