@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tflite/tflite.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/painting.dart';
 
 // ignore: must_be_immutable
 class HomePage extends StatefulWidget {
@@ -73,41 +75,63 @@ Widget homePageAppBar(context, {bool isDark}) {
   );
 }
 
-closeTflite() async {
-  await Tflite.close();
+
+
+class MainContent extends StatefulWidget {
+  File imgFile;
+  String imgPath;
+
+  MainContent({this.imgFile, this.imgPath});
+
+  @override
+  _MainContentState createState() => _MainContentState();
 }
 
-Widget mainContent(context) {
+class _MainContentState extends State<MainContent> {
 
   final _picker = ImagePicker();
 
-  Future<void> runOnImage(File file) async {
+  // Loading TF model
+  loadModel() async {
+    String res = await Tflite.loadModel(
+      model: "assets/output.tflite",
+      labels: "assets/Labels.txt",
+    );
+    print("Model Loaded : " + res);
+  }
 
-    // Get application dir
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-    String imgPath = appDocDir.uri.resolve("image.jpg").path;
-    File imgFile = await file.copy(imgPath);
-    print(imgFile.path);
+  Future<void> runOnImage(String path) async {
 
     // Image recognition using tfLite
-    var recognitions = await Tflite.runModelOnImage(
-      path: imgFile.path, // required
-      // imageMean: 0.0,   // defaults to 117.0
-      imageStd: 255.0,  // defaults to 1.0
-      numResults: 1, // defaults to 5
-      threshold: 0.2,   // defaults to 0.1
-    );
+    print("RunOnImage :" + path);
+
+    var recognitions = await Tflite.runModelOnImage(path: path, numResults: 1,imageMean: 0.0,imageStd: 255);
+
     print(recognitions);
   }
 
   // Click
   onClick(ImageSource source) async {
     try {
-      PickedFile image =
-          await _picker.getImage(source: source, imageQuality: 50,maxHeight: 256.0,maxWidth: 256.0 );
+      PickedFile pickedFile =
+          await _picker.getImage(source: source,maxWidth: 256,maxHeight: 256);
+      final File image = File(pickedFile.path);
+      print(image.path);
+
+      try {
+        loadModel();
+      } catch (e) {
+        print("Loading Model" + e);
+      }
+
       if (image != null) {
-        final File file = File(image.path);
-        await runOnImage(file);
+        setState(() {
+          widget.imgFile = image;
+          widget.imgPath = image.path;
+        });
+        await runOnImage(widget.imgPath);
+        await Tflite.close();
+
       } else {
         final snackBar = SnackBar(content: Text('No image selected.'));
         Scaffold.of(context).showSnackBar(snackBar);
@@ -121,70 +145,75 @@ Widget mainContent(context) {
     }
   }
 
-  // UI
-  return Container(
-    padding: EdgeInsets.symmetric(horizontal: 20.0),
-    width: MediaQuery.of(context).size.width,
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        Flexible(
-            flex: 2,
-            child: Text(
-              "Take a picture from camera \nor\n Open gallery and select a picture ",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 28.0),
-            )),
-        Flexible(
-          flex: 1,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                    flex: 1,
-                    child: RaisedButton.icon(
-                      onPressed: () async {
-                       onClick(ImageSource.camera);
-                      },
-                      icon: Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 26.0,
-                      ),
-                      label: Text("Camera",
-                          style:
-                              TextStyle(color: Colors.white, fontSize: 18.0)),
-                      color: Colors.blue,
-                    )),
-                Flexible(
-                    flex: 1,
-                    child: RaisedButton.icon(
-                      onPressed: () async {
-                        onClick(ImageSource.gallery);
-                      },
-                      icon: Icon(
-                        Icons.image,
-                        color: Colors.white,
-                        size: 26.0,
-                      ),
-                      label: Text(
-                        "Gallery",
-                        style: TextStyle(color: Colors.white, fontSize: 18.0),
-                      ),
-                      color: Colors.blue,
-                    )),
-              ],
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20.0),
+      width: MediaQuery.of(context).size.width,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Flexible(
+              flex: 2,
+              child: Text(
+                "Take a picture from camera \nor\n Open gallery and select a picture ",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 28.0),
+              )),
+          Flexible(
+            flex: 1,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                      flex: 1,
+                      child: RaisedButton.icon(
+                        onPressed: () async {
+                          onClick(ImageSource.camera);
+                        },
+                        icon: Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 26.0,
+                        ),
+                        label: Text("Camera",
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 18.0)),
+                        color: Colors.blue,
+                      )),
+                  Flexible(
+                      flex: 1,
+                      child: RaisedButton.icon(
+                        onPressed: () async {
+                          onClick(ImageSource.gallery);
+                        },
+                        icon: Icon(
+                          Icons.image,
+                          color: Colors.white,
+                          size: 26.0,
+                        ),
+                        label: Text(
+                          "Gallery",
+                          style: TextStyle(color: Colors.white, fontSize: 18.0),
+                        ),
+                        color: Colors.blue,
+                      )),
+                ],
+              ),
             ),
-          ),
-        )
-      ],
-    ),
-  );
+          )
+        ],
+      ),
+    );
+    ;
+  }
 }
 
 class _HomePageState extends State<HomePage> {
+  File imgFile;
+  String imgPath;
 
   setTheme(value) {
     setState(() {
@@ -192,28 +221,16 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  // Loading TF model
-  loadModel() async {
-    String res = await Tflite.loadModel(
-        model: "assets/output.tflite",
-        labels: "assets/Labels.txt",
-        useGpuDelegate: false);
-    print(res);
-  }
-
   // Initial state
   @override
   void initState() {
-    loadModel();
     super.initState();
   }
 
   @override
   void dispose() {
-    closeTflite();
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -228,7 +245,12 @@ class _HomePageState extends State<HomePage> {
               builder: (context) => Column(
                 children: [
                   Flexible(flex: 2, child: Container()),
-                  Flexible(flex: 3, child: mainContent(context)),
+                  Flexible(
+                      flex: 3,
+                      child: MainContent(
+                        imgFile: imgFile,
+                        imgPath: imgPath,
+                      )),
                   Flexible(flex: 2, child: Container()),
                 ],
               ),
