@@ -3,17 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tflite/tflite.dart';
-import 'package:path_provider/path_provider.dart';
+import '../Pages/ResultPage.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/painting.dart';
-
-// ignore: must_be_immutable
-class HomePage extends StatefulWidget {
-  HomePage({this.isDark});
-  bool isDark;
-  @override
-  _HomePageState createState() => _HomePageState();
-}
 
 Future<bool> setThemeData(bool local) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -56,8 +48,8 @@ Widget homePageAppBar(context, {bool isDark}) {
     automaticallyImplyLeading: false,
     title: Text(
       "Detector",
-      style:
-          TextStyle(color: isDark ? Colors.white : Colors.blue, fontSize: 24.0),
+      style: TextStyle(
+          color: isDark ? Colors.white : Colors.blue, fontSize: 24.0),
     ),
     backgroundColor: Colors.transparent,
     elevation: 0.0,
@@ -75,20 +67,20 @@ Widget homePageAppBar(context, {bool isDark}) {
   );
 }
 
-
-
+// ignore: must_be_immutable
 class MainContent extends StatefulWidget {
+  bool isLoading;
   File imgFile;
   String imgPath;
+  bool isDark;
 
-  MainContent({this.imgFile, this.imgPath});
+  MainContent({this.imgFile, this.imgPath, this.isLoading,this.isDark});
 
   @override
   _MainContentState createState() => _MainContentState();
 }
 
 class _MainContentState extends State<MainContent> {
-
   final _picker = ImagePicker();
 
   // Loading TF model
@@ -101,20 +93,38 @@ class _MainContentState extends State<MainContent> {
   }
 
   Future<void> runOnImage(String path) async {
-
     // Image recognition using tfLite
     print("RunOnImage :" + path);
 
-    var recognitions = await Tflite.runModelOnImage(path: path, numResults: 1,imageMean: 0.0,imageStd: 255);
+    setState(() {
+      widget.isLoading = true;
+    });
 
-    print(recognitions);
+    try {
+      var recognitions = await Tflite.runModelOnImage(
+          path: path, numResults: 1, imageMean: 0.0, imageStd: 255);
+      print(recognitions);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ResultPage(isDark: widget.isDark,)),
+      );
+    } catch (e) {
+      print(e);
+      final snackBar = SnackBar(content: Text('Something went wrong!'));
+      Scaffold.of(context).showSnackBar(snackBar);
+      print('Something went wrong!');
+    }
+
+    setState(() {
+      widget.isLoading = false;
+    });
   }
 
   // Click
   onClick(ImageSource source) async {
     try {
       PickedFile pickedFile =
-          await _picker.getImage(source: source,maxWidth: 256,maxHeight: 256);
+          await _picker.getImage(source: source, maxWidth: 256, maxHeight: 256);
       final File image = File(pickedFile.path);
       print(image.path);
 
@@ -131,7 +141,6 @@ class _MainContentState extends State<MainContent> {
         });
         await runOnImage(widget.imgPath);
         await Tflite.close();
-
       } else {
         final snackBar = SnackBar(content: Text('No image selected.'));
         Scaffold.of(context).showSnackBar(snackBar);
@@ -207,11 +216,20 @@ class _MainContentState extends State<MainContent> {
         ],
       ),
     );
-    ;
   }
 }
 
+// ignore: must_be_immutable
+class HomePage extends StatefulWidget {
+  HomePage({this.isDark});
+  bool isDark;
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
 class _HomePageState extends State<HomePage> {
+  bool isLoading = false;
+
   File imgFile;
   String imgPath;
 
@@ -242,16 +260,25 @@ class _HomePageState extends State<HomePage> {
           builder: (context) => Scaffold(
             appBar: homePageAppBar(context, isDark: widget.isDark),
             body: Builder(
-              builder: (context) => Column(
+              builder: (context) => Stack(
                 children: [
-                  Flexible(flex: 2, child: Container()),
-                  Flexible(
-                      flex: 3,
-                      child: MainContent(
-                        imgFile: imgFile,
-                        imgPath: imgPath,
-                      )),
-                  Flexible(flex: 2, child: Container()),
+                  isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : Container(),
+                  Column(
+                    children: [
+                      Flexible(flex: 2, child: Container()),
+                      Flexible(
+                          flex: 3,
+                          child: MainContent(
+                            imgFile: imgFile,
+                            imgPath: imgPath,
+                            isLoading: isLoading,
+                            isDark: widget.isDark,
+                          )),
+                      Flexible(flex: 2, child: Container()),
+                    ],
+                  )
                 ],
               ),
             ),
