@@ -6,6 +6,7 @@ import 'package:tflite/tflite.dart';
 import '../Pages/ResultPage.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/painting.dart';
+import '../JsonDecode.dart';
 
 Future<bool> setThemeData(bool local) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -69,6 +70,7 @@ Widget homePageAppBar(context, {bool isDark}) {
 
 // ignore: must_be_immutable
 class MainContent extends StatefulWidget {
+
   bool isLoading;
   File imgFile;
   String imgPath;
@@ -104,14 +106,23 @@ class _MainContentState extends State<MainContent> {
       var recognitions = await Tflite.runModelOnImage(
           path: path, numResults: 1, imageMean: 0.0, imageStd: 255);
       print(recognitions);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => ResultPage(
-                  isDark: widget.isDark,
-                  imgFile: widget.imgFile,
-                )),
-      );
+
+
+      if( recognitions != null ){
+
+        ResponseList resList = ResponseList.fromJson(recognitions);
+        print(resList.listOfResponse[0].index);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => ResultPage(
+                isDark: widget.isDark,
+                imgFile: widget.imgFile,
+              )),
+        );
+      }
+
     } catch (e) {
       print(e);
       final snackBar = SnackBar(content: Text('Something went wrong!'));
