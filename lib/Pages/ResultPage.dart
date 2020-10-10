@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 class ResultPage extends StatefulWidget {
   bool isDark;
-  ResultPage({this.isDark});
+  File imgFile;
+  ResultPage({this.isDark,this.imgFile});
   @override
   _ResultPageState createState() => _ResultPageState();
 }
@@ -22,19 +24,24 @@ class _ResultPageState extends State<ResultPage> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0.0,
-        actions: [
-          Builder(
-              builder: (context) => IconButton(
-                  icon: Icon(
-                    Icons.settings,
-                    color: widget.isDark ? Colors.white : Colors.blue,
-                  ),
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  }))
-        ],
       ),
-        // body: ,
+        body: Column(
+          children: [
+            SizedBox(height: 20.0,),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  child: SizedBox(
+                    height: 256,
+                    width: 256,
+                    child: Image.file(widget.imgFile),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }

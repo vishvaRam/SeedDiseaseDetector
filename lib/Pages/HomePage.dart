@@ -109,13 +109,14 @@ class _MainContentState extends State<MainContent> {
         MaterialPageRoute(
             builder: (context) => ResultPage(
                   isDark: widget.isDark,
+                  imgFile: widget.imgFile,
                 )),
       );
     } catch (e) {
       print(e);
       final snackBar = SnackBar(content: Text('Something went wrong!'));
       Scaffold.of(context).showSnackBar(snackBar);
-      print('Something went wrong!');
+      print('Something went wrong in running ML!');
     }
 
     setState(() {
@@ -131,11 +132,11 @@ class _MainContentState extends State<MainContent> {
       final File image = File(pickedFile.path);
       print(image.path);
 
-      try {
-        loadModel();
-      } catch (e) {
-        print("Loading Model" + e);
-      }
+        try {
+          loadModel();
+        } catch (e) {
+          print("Loading Model" + e);
+        }
 
       if (image != null) {
         setState(() {
@@ -145,15 +146,16 @@ class _MainContentState extends State<MainContent> {
         await runOnImage(widget.imgPath);
         await Tflite.close();
       } else {
-        final snackBar = SnackBar(content: Text('No image selected.'));
+
+        final snackBar = SnackBar(content: Text('No image selected!'));
         Scaffold.of(context).showSnackBar(snackBar);
         print('No image selected.');
       }
     } catch (e) {
       print(e);
-      final snackBar = SnackBar(content: Text('Something went wrong!'));
+      final snackBar = SnackBar(content: Text('No image selected!'));
       Scaffold.of(context).showSnackBar(snackBar);
-      print('Something went wrong!');
+      print('Something went wrong in image picking!');
     }
   }
 
