@@ -48,8 +48,8 @@ Widget homePageAppBar(context, {bool isDark}) {
     automaticallyImplyLeading: false,
     title: Text(
       "Detector",
-      style: TextStyle(
-          color: isDark ? Colors.white : Colors.blue, fontSize: 24.0),
+      style:
+          TextStyle(color: isDark ? Colors.white : Colors.blue, fontSize: 24.0),
     ),
     backgroundColor: Colors.transparent,
     elevation: 0.0,
@@ -74,7 +74,7 @@ class MainContent extends StatefulWidget {
   String imgPath;
   bool isDark;
 
-  MainContent({this.imgFile, this.imgPath, this.isLoading,this.isDark});
+  MainContent({this.imgFile, this.imgPath, this.isLoading, this.isDark});
 
   @override
   _MainContentState createState() => _MainContentState();
@@ -86,8 +86,8 @@ class _MainContentState extends State<MainContent> {
   // Loading TF model
   loadModel() async {
     String res = await Tflite.loadModel(
-      model: "assets/output.tflite",
-      labels: "assets/Labels.txt",
+      model: "assets/mobile.tflite",
+      labels: "assets/Lable.txt",
     );
     print("Model Loaded : " + res);
   }
@@ -106,7 +106,10 @@ class _MainContentState extends State<MainContent> {
       print(recognitions);
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => ResultPage(isDark: widget.isDark,)),
+        MaterialPageRoute(
+            builder: (context) => ResultPage(
+                  isDark: widget.isDark,
+                )),
       );
     } catch (e) {
       print(e);
