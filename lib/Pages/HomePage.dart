@@ -83,6 +83,10 @@ class MainContent extends StatefulWidget {
 }
 
 class _MainContentState extends State<MainContent> {
+
+  String lable;
+  double confidence;
+
   final _picker = ImagePicker();
 
   // Loading TF model
@@ -107,22 +111,29 @@ class _MainContentState extends State<MainContent> {
           path: path, numResults: 1, imageMean: 0.0, imageStd: 255);
       print(recognitions);
 
-
-      if( recognitions != null ){
+      // Decoding
+      if (recognitions != null) {
 
         ResponseList resList = ResponseList.fromJson(recognitions);
-        print(resList.listOfResponse[0].index);
+        print(resList.listOfResponse[0].label);
+
+        setState(() {
+          lable = resList.listOfResponse[0].label;
+          confidence = resList.listOfResponse[0].confidence;
+        });
 
         Navigator.push(
           context,
           MaterialPageRoute(
               builder: (context) => ResultPage(
-                isDark: widget.isDark,
-                imgFile: widget.imgFile,
-              )),
+                    isDark: widget.isDark,
+                    imgFile: widget.imgFile,
+                    lable: lable,
+                    confidence: confidence,
+                  )
+          ),
         );
       }
-
     } catch (e) {
       print(e);
       final snackBar = SnackBar(content: Text('Something went wrong!'));
@@ -143,11 +154,11 @@ class _MainContentState extends State<MainContent> {
       final File image = File(pickedFile.path);
       print(image.path);
 
-        try {
-          loadModel();
-        } catch (e) {
-          print("Loading Model" + e);
-        }
+      try {
+        loadModel();
+      } catch (e) {
+        print("Loading Model" + e);
+      }
 
       if (image != null) {
         setState(() {
@@ -157,7 +168,6 @@ class _MainContentState extends State<MainContent> {
         await runOnImage(widget.imgPath);
         await Tflite.close();
       } else {
-
         final snackBar = SnackBar(content: Text('No image selected!'));
         Scaffold.of(context).showSnackBar(snackBar);
         print('No image selected.');
