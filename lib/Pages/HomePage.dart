@@ -45,26 +45,24 @@ Widget homePageDrawer({bool isDark, setTheme}) {
 // App Bar
 Widget homePageAppBar(context, {bool isDark}) {
   return AppBar(
+    leading: Builder(
+      builder:(context)=> IconButton(
+          icon: Icon(
+            Icons.settings,
+          ),
+          onPressed: () {
+            Scaffold.of(context).openDrawer();
+          }),
+    ),
     centerTitle: true,
     automaticallyImplyLeading: false,
     title: Text(
-      "Detector",
+      "Tomato Disease Detector",
       style:
-          TextStyle(color: isDark ? Colors.white : Colors.blue, fontSize: 24.0),
+          TextStyle( fontSize: 24.0),
     ),
-    backgroundColor: Colors.transparent,
-    elevation: 0.0,
-    actions: [
-      Builder(
-          builder: (context) => IconButton(
-              icon: Icon(
-                Icons.settings,
-                color: isDark ? Colors.white : Colors.blue,
-              ),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              }))
-    ],
+    // backgroundColor: Colors.transparent,
+    elevation: 8.0,
   );
 }
 
@@ -116,6 +114,17 @@ class _MainContentState extends State<MainContent> {
 
         ResponseList resList = ResponseList.fromJson(recognitions);
         print(resList.listOfResponse[0].label);
+
+        int confi = (resList.listOfResponse[0].confidence * 100).toInt();
+
+        if(confi < 50){
+          print("It is not a tomato leaf.");
+
+          final snackBar = SnackBar(content: Text('Image is not clear to detect!'));
+          Scaffold.of(context).showSnackBar(snackBar);
+          return;
+
+        }
 
         setState(() {
           lable = resList.listOfResponse[0].label;

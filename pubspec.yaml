@@ -28,6 +28,7 @@ dependencies:
   shared_preferences: ^0.5.12
   tflite: ^1.1.1
   url_launcher: ^5.7.2
+  expandable_text: 0.1.0
 
 dev_dependencies:
   flutter_test:
@@ -48,6 +49,7 @@ flutter:
   assets:
     - assets/Lable.txt
     - assets/mobile.tflite
+    - assets/logo.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
