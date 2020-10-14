@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tflite/tflite.dart';
 import '../Pages/ResultPage.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../JsonDecode.dart';
 
 Future<bool> setThemeData(bool local) async {
@@ -14,6 +15,9 @@ Future<bool> setThemeData(bool local) async {
 
 // Drawer
 Widget homePageDrawer({bool isDark, setTheme}) {
+
+  final drawerTextStyle = TextStyle(fontSize: 18);
+
   return Builder(
     builder: (context) => Drawer(
       child: ListView(
@@ -26,14 +30,30 @@ Widget homePageDrawer({bool isDark, setTheme}) {
             style: TextStyle(fontSize: 26.0),
           ))),
           ListTile(
-            title: Text("Dark mode"),
+            title: Text("Dark mode",style: drawerTextStyle,),
             trailing: Switch(
                 value: isDark,
                 onChanged: (value) async {
                   setTheme(value);
                   await setThemeData(value);
                 }),
-          )
+          ),
+          ListTile(
+              title: Text("Developer",style: drawerTextStyle,),
+              trailing: IconButton(
+                icon: Icon(Icons.open_in_new),
+                onPressed: () async {
+                  String baseURL = "https://www.instagram.com/vishva_photography1/";
+                  if (await canLaunch(baseURL)) {
+                    await launch(baseURL);
+                  } else {
+                    final snackBar =
+                        SnackBar(content: Text('Could not launch URL'));
+                    Scaffold.of(context).showSnackBar(snackBar);
+                    throw "Could not launch URL";
+                  }
+                },
+              ))
         ],
       ),
     ),
@@ -44,7 +64,7 @@ Widget homePageDrawer({bool isDark, setTheme}) {
 Widget homePageAppBar(context, {bool isDark}) {
   return AppBar(
     leading: Builder(
-      builder:(context)=> IconButton(
+      builder: (context) => IconButton(
           icon: Icon(
             Icons.dehaze,
           ),
@@ -56,8 +76,7 @@ Widget homePageAppBar(context, {bool isDark}) {
     automaticallyImplyLeading: false,
     title: Text(
       "Tomato Disease Detector",
-      style:
-          TextStyle( fontSize: 24.0),
+      style: TextStyle(fontSize: 24.0),
     ),
     // backgroundColor: Colors.transparent,
     elevation: 8.0,
@@ -66,7 +85,6 @@ Widget homePageAppBar(context, {bool isDark}) {
 
 // ignore: must_be_immutable
 class MainContent extends StatefulWidget {
-
   bool isLoading;
   File imgFile;
   String imgPath;
@@ -79,7 +97,6 @@ class MainContent extends StatefulWidget {
 }
 
 class _MainContentState extends State<MainContent> {
-
   String lable;
   double confidence;
 
@@ -98,7 +115,6 @@ class _MainContentState extends State<MainContent> {
     // Image recognition using tfLite
     print("RunOnImage :" + path);
 
-
     try {
       var recognitions = await Tflite.runModelOnImage(
           path: path, numResults: 1, imageMean: 0.0, imageStd: 255);
@@ -106,24 +122,24 @@ class _MainContentState extends State<MainContent> {
 
       // Decoding
       if (recognitions != null) {
-
         ResponseList resList = ResponseList.fromJson(recognitions);
         print(resList.listOfResponse[0].label);
 
         int confi = (resList.listOfResponse[0].confidence * 100).toInt();
 
-        if(confi < 70){
+        if (confi < 70) {
           print("It is not a tomato leaf.");
 
-          final snackBar = SnackBar(content: Text('Image is not clear to detect!'));
+          final snackBar =
+              SnackBar(content: Text('Image is not clear to detect!'));
           Scaffold.of(context).showSnackBar(snackBar);
           return;
-
         }
 
         setState(() {
           lable = resList.listOfResponse[0].label;
           confidence = resList.listOfResponse[0].confidence;
+          widget.isLoading = false;
         });
 
         Navigator.push(
@@ -135,8 +151,7 @@ class _MainContentState extends State<MainContent> {
                     imgPath: widget.imgPath,
                     lable: lable,
                     confidence: confidence,
-                  )
-          ),
+                  )),
         );
       }
     } catch (e) {
@@ -145,16 +160,18 @@ class _MainContentState extends State<MainContent> {
       Scaffold.of(context).showSnackBar(snackBar);
       print('Something went wrong in running ML!');
     }
-
   }
 
   // Click
   onClick(ImageSource source) async {
     try {
-      PickedFile pickedFile =
-          await _picker.getImage(source: source, maxWidth: 256, maxHeight: 256);
+      PickedFile pickedFile = await _picker.getImage(source: source);
       final File image = File(pickedFile.path);
       print(image.path);
+
+      setState(() {
+        widget.isLoading = true;
+      });
 
       try {
         loadModel();
@@ -163,23 +180,20 @@ class _MainContentState extends State<MainContent> {
       }
 
       if (image != null) {
-
         setState(() {
           widget.imgFile = image;
           widget.imgPath = image.path;
         });
 
-        setState(() {
-          widget.isLoading = true;
-        });
         print(widget.isLoading);
         await runOnImage(widget.imgPath);
+
+        await Tflite.close();
 
         setState(() {
           widget.isLoading = false;
         });
         print(widget.isLoading);
-        await Tflite.close();
       } else {
         final snackBar = SnackBar(content: Text('No image selected!'));
         Scaffold.of(context).showSnackBar(snackBar);
@@ -302,7 +316,7 @@ class _HomePageState extends State<HomePage> {
               builder: (context) => Stack(
                 children: [
                   Builder(
-                    builder:(context)=> isLoading
+                    builder: (context) => isLoading
                         ? Center(child: CircularProgressIndicator())
                         : Container(),
                   ),
