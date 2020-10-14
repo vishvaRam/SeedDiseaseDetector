@@ -29,6 +29,7 @@ dependencies:
   tflite: ^1.1.1
   url_launcher: ^5.7.2
   expandable_text: 0.1.0
+  path_provider: ^1.6.18
 
 dev_dependencies:
   flutter_test:

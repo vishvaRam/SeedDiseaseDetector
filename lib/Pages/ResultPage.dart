@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:expandable_text/expandable_text.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
 // ignore: must_be_immutable
 class ResultPage extends StatefulWidget {
   bool isDark;
   File imgFile;
+  String imgPath;
   String lable;
   double confidence;
-  ResultPage({this.isDark, this.imgFile, this.lable, this.confidence});
+  ResultPage({this.isDark, this.imgFile,this.imgPath, this.lable, this.confidence});
   @override
   _ResultPageState createState() => _ResultPageState();
 }
@@ -130,6 +133,21 @@ class _ResultPageState extends State<ResultPage> {
     super.initState();
   }
 
+
+  // Clearing the cached image in app directory
+  Future<void> deletePicture() async{
+
+    final dir = File(widget.imgPath);
+    dir.delete(recursive: true);
+    print("Deleted");
+  }
+
+  @override
+  void dispose() {
+    deletePicture();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -153,7 +171,9 @@ class _ResultPageState extends State<ResultPage> {
             child: Icon(Icons.open_in_new),
           ),
           appBar: AppBar(
-            leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: () {Navigator.pop(context);}),
+            leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: () {Navigator.pop(context);setState(() {
+              widget.imgFile = null;
+            });}),
             centerTitle: false,
             automaticallyImplyLeading: false,
             title: Text(

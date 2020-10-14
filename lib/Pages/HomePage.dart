@@ -4,8 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tflite/tflite.dart';
 import '../Pages/ResultPage.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/painting.dart';
 import '../JsonDecode.dart';
 
 Future<bool> setThemeData(bool local) async {
@@ -48,7 +46,7 @@ Widget homePageAppBar(context, {bool isDark}) {
     leading: Builder(
       builder:(context)=> IconButton(
           icon: Icon(
-            Icons.settings,
+            Icons.dehaze,
           ),
           onPressed: () {
             Scaffold.of(context).openDrawer();
@@ -100,9 +98,6 @@ class _MainContentState extends State<MainContent> {
     // Image recognition using tfLite
     print("RunOnImage :" + path);
 
-    setState(() {
-      widget.isLoading = true;
-    });
 
     try {
       var recognitions = await Tflite.runModelOnImage(
@@ -117,7 +112,7 @@ class _MainContentState extends State<MainContent> {
 
         int confi = (resList.listOfResponse[0].confidence * 100).toInt();
 
-        if(confi < 50){
+        if(confi < 70){
           print("It is not a tomato leaf.");
 
           final snackBar = SnackBar(content: Text('Image is not clear to detect!'));
@@ -137,6 +132,7 @@ class _MainContentState extends State<MainContent> {
               builder: (context) => ResultPage(
                     isDark: widget.isDark,
                     imgFile: widget.imgFile,
+                    imgPath: widget.imgPath,
                     lable: lable,
                     confidence: confidence,
                   )
@@ -150,9 +146,6 @@ class _MainContentState extends State<MainContent> {
       print('Something went wrong in running ML!');
     }
 
-    setState(() {
-      widget.isLoading = false;
-    });
   }
 
   // Click
@@ -170,11 +163,22 @@ class _MainContentState extends State<MainContent> {
       }
 
       if (image != null) {
+
         setState(() {
           widget.imgFile = image;
           widget.imgPath = image.path;
         });
+
+        setState(() {
+          widget.isLoading = true;
+        });
+        print(widget.isLoading);
         await runOnImage(widget.imgPath);
+
+        setState(() {
+          widget.isLoading = false;
+        });
+        print(widget.isLoading);
         await Tflite.close();
       } else {
         final snackBar = SnackBar(content: Text('No image selected!'));
@@ -297,9 +301,11 @@ class _HomePageState extends State<HomePage> {
             body: Builder(
               builder: (context) => Stack(
                 children: [
-                  isLoading
-                      ? Center(child: CircularProgressIndicator())
-                      : Container(),
+                  Builder(
+                    builder:(context)=> isLoading
+                        ? Center(child: CircularProgressIndicator())
+                        : Container(),
+                  ),
                   Column(
                     children: [
                       Flexible(flex: 2, child: Container()),
