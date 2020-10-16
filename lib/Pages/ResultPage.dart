@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:expandable_text/expandable_text.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 
 // ignore: must_be_immutable
 class ResultPage extends StatefulWidget {
@@ -139,8 +138,7 @@ class _ResultPageState extends State<ResultPage> {
 
     final dir = File(widget.imgPath);
     dir.delete(recursive: true);
-    print("Deleted");
-  }
+    print("Deleted");}
 
   @override
   void dispose() {

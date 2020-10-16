@@ -15,7 +15,6 @@ Future<bool> setThemeData(bool local) async {
 
 // Drawer
 Widget homePageDrawer({bool isDark, setTheme}) {
-
   final drawerTextStyle = TextStyle(fontSize: 18);
 
   return Builder(
@@ -30,7 +29,10 @@ Widget homePageDrawer({bool isDark, setTheme}) {
             style: TextStyle(fontSize: 26.0),
           ))),
           ListTile(
-            title: Text("Dark mode",style: drawerTextStyle,),
+            title: Text(
+              "Dark mode",
+              style: drawerTextStyle,
+            ),
             trailing: Switch(
                 value: isDark,
                 onChanged: (value) async {
@@ -39,11 +41,15 @@ Widget homePageDrawer({bool isDark, setTheme}) {
                 }),
           ),
           ListTile(
-              title: Text("Developer",style: drawerTextStyle,),
+              title: Text(
+                "Developer",
+                style: drawerTextStyle,
+              ),
               trailing: IconButton(
                 icon: Icon(Icons.open_in_new),
                 onPressed: () async {
-                  String baseURL = "https://www.instagram.com/vishva_photography1/";
+                  String baseURL =
+                      "https://www.instagram.com/vishva_photography1/";
                   if (await canLaunch(baseURL)) {
                     await launch(baseURL);
                   } else {
@@ -89,8 +95,14 @@ class MainContent extends StatefulWidget {
   File imgFile;
   String imgPath;
   bool isDark;
+  Function loadingIndicator;
 
-  MainContent({this.imgFile, this.imgPath, this.isLoading, this.isDark});
+  MainContent(
+      {this.imgFile,
+      this.imgPath,
+      this.isLoading,
+      this.isDark,
+      this.loadingIndicator});
 
   @override
   _MainContentState createState() => _MainContentState();
@@ -103,12 +115,16 @@ class _MainContentState extends State<MainContent> {
   final _picker = ImagePicker();
 
   // Loading TF model
-  loadModel() async {
-    String res = await Tflite.loadModel(
-      model: "assets/mobile.tflite",
-      labels: "assets/Lable.txt",
-    );
-    print("Model Loaded : " + res);
+  loadModel(context, String model, String label, String errorMessage) async {
+    try {
+      String res =
+          await Tflite.loadModel(model: model, labels: label, numThreads: 4);
+      print("Model Loaded : " + res);
+    } catch (e) {
+      print(e);
+      final snackBar = SnackBar(content: Text(errorMessage));
+      Scaffold.of(context).showSnackBar(snackBar);
+    }
   }
 
   Future<void> runOnImage(String path) async {
@@ -116,6 +132,9 @@ class _MainContentState extends State<MainContent> {
     print("RunOnImage :" + path);
 
     try {
+      loadModel(context, "assets/mobile.tflite", "assets/Lable.txt",
+          'Image is not clear to detect!');
+
       var recognitions = await Tflite.runModelOnImage(
           path: path, numResults: 1, imageMean: 0.0, imageStd: 255);
       print(recognitions);
@@ -127,8 +146,8 @@ class _MainContentState extends State<MainContent> {
 
         int confi = (resList.listOfResponse[0].confidence * 100).toInt();
 
-        if (confi < 70) {
-          print("It is not a tomato leaf.");
+        if (confi < 85) {
+          print("Image is not clear to detect!'");
 
           final snackBar =
               SnackBar(content: Text('Image is not clear to detect!'));
@@ -139,7 +158,6 @@ class _MainContentState extends State<MainContent> {
         setState(() {
           lable = resList.listOfResponse[0].label;
           confidence = resList.listOfResponse[0].confidence;
-          widget.isLoading = false;
         });
 
         Navigator.push(
@@ -164,47 +182,70 @@ class _MainContentState extends State<MainContent> {
 
   // Click
   onClick(ImageSource source) async {
+    widget.loadingIndicator(true);
+    print(widget.isLoading);
+
     try {
+      print(widget.isLoading);
       PickedFile pickedFile = await _picker.getImage(source: source);
       final File image = File(pickedFile.path);
       print(image.path);
 
-      setState(() {
-        widget.isLoading = true;
-      });
-
-      try {
-        loadModel();
-      } catch (e) {
-        print("Loading Model" + e);
-      }
-
+      // Setting Image
       if (image != null) {
         setState(() {
           widget.imgFile = image;
           widget.imgPath = image.path;
         });
 
-        print(widget.isLoading);
-        await runOnImage(widget.imgPath);
+        try {
+          loadModel(context, "assets/tomatoOrother.tflite",
+              "assets/TomatoOrotherlabels.txt", 'Select a leaf image!');
+          var firstModel = await Tflite.runModelOnImage(
+              path: widget.imgPath,
+              numResults: 1,
+              imageMean: 0.001,
+              imageStd: 255);
 
-        await Tflite.close();
+          if (firstModel != null) {
+            ResponseList resList = ResponseList.fromJson(firstModel);
+            print(resList.listOfResponse[0].label);
 
-        setState(() {
-          widget.isLoading = false;
-        });
-        print(widget.isLoading);
+            int confi = (resList.listOfResponse[0].confidence * 100).toInt();
+
+            print(confi.toString() + "%");
+
+            if (resList.listOfResponse[0].label == "Other") {
+              print("It is not a tomato leaf.");
+              final snackBar = SnackBar(content: Text('Select a leaf image!'));
+              Scaffold.of(context).showSnackBar(snackBar);
+              widget.loadingIndicator(false);
+              print(widget.isLoading);
+              return;
+            } else {
+              await runOnImage(widget.imgPath);
+              await Tflite.close();
+            }
+          }
+        } catch (e) {
+          print("Loading Model" + e);
+        }
       } else {
         final snackBar = SnackBar(content: Text('No image selected!'));
         Scaffold.of(context).showSnackBar(snackBar);
         print('No image selected.');
       }
+
+      widget.loadingIndicator(false);
+      print(widget.isLoading);
     } catch (e) {
       print(e);
       final snackBar = SnackBar(content: Text('No image selected!'));
       Scaffold.of(context).showSnackBar(snackBar);
       print('Something went wrong in image picking!');
     }
+    widget.loadingIndicator(false);
+    print(widget.isLoading);
   }
 
   @override
@@ -234,6 +275,8 @@ class _MainContentState extends State<MainContent> {
                       child: RaisedButton.icon(
                         onPressed: () async {
                           onClick(ImageSource.camera);
+                          widget.loadingIndicator(false);
+                          print(widget.isLoading);
                         },
                         icon: Icon(
                           Icons.camera_alt,
@@ -303,6 +346,12 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  loadingIndicator(bool value) {
+    setState(() {
+      isLoading = value;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -315,11 +364,11 @@ class _HomePageState extends State<HomePage> {
             body: Builder(
               builder: (context) => Stack(
                 children: [
-                  Builder(
-                    builder: (context) => isLoading
-                        ? Center(child: CircularProgressIndicator())
-                        : Container(),
-                  ),
+                  isLoading
+                      ? Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : Container(),
                   Column(
                     children: [
                       Flexible(flex: 2, child: Container()),
@@ -330,6 +379,7 @@ class _HomePageState extends State<HomePage> {
                             imgPath: imgPath,
                             isLoading: isLoading,
                             isDark: widget.isDark,
+                            loadingIndicator: loadingIndicator,
                           )),
                       Flexible(flex: 2, child: Container()),
                     ],
