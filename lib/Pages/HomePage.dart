@@ -152,6 +152,7 @@ class _MainContentState extends State<MainContent> {
           final snackBar =
               SnackBar(content: Text('Image is not clear to detect!'));
           Scaffold.of(context).showSnackBar(snackBar);
+          widget.loadingIndicator(false);
           return;
         }
 
@@ -159,6 +160,8 @@ class _MainContentState extends State<MainContent> {
           lable = resList.listOfResponse[0].label;
           confidence = resList.listOfResponse[0].confidence;
         });
+
+        widget.loadingIndicator(false);
 
         Navigator.push(
           context,
@@ -176,6 +179,7 @@ class _MainContentState extends State<MainContent> {
       print(e);
       final snackBar = SnackBar(content: Text('Something went wrong!'));
       Scaffold.of(context).showSnackBar(snackBar);
+      widget.loadingIndicator(false);
       print('Something went wrong in running ML!');
     }
   }
@@ -233,6 +237,7 @@ class _MainContentState extends State<MainContent> {
       } else {
         final snackBar = SnackBar(content: Text('No image selected!'));
         Scaffold.of(context).showSnackBar(snackBar);
+        widget.loadingIndicator(false);
         print('No image selected.');
       }
 

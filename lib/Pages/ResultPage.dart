@@ -11,7 +11,8 @@ class ResultPage extends StatefulWidget {
   String imgPath;
   String lable;
   double confidence;
-  ResultPage({this.isDark, this.imgFile,this.imgPath, this.lable, this.confidence});
+  ResultPage(
+      {this.isDark, this.imgFile, this.imgPath, this.lable, this.confidence});
   @override
   _ResultPageState createState() => _ResultPageState();
 }
@@ -25,6 +26,9 @@ class _ResultPageState extends State<ResultPage> {
 
   @override
   void initState() {
+
+
+
     switch (widget.lable) {
       case "Bacterial_spot":
         setState(() {
@@ -132,13 +136,12 @@ class _ResultPageState extends State<ResultPage> {
     super.initState();
   }
 
-
   // Clearing the cached image in app directory
-  Future<void> deletePicture() async{
-
+  Future<void> deletePicture() async {
     final dir = File(widget.imgPath);
     dir.delete(recursive: true);
-    print("Deleted");}
+    print("Deleted");
+  }
 
   @override
   void dispose() {
@@ -169,9 +172,14 @@ class _ResultPageState extends State<ResultPage> {
             child: Icon(Icons.open_in_new),
           ),
           appBar: AppBar(
-            leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: () {Navigator.pop(context);setState(() {
-              widget.imgFile = null;
-            });}),
+            leading: IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    widget.imgFile = null;
+                  });
+                }),
             centerTitle: false,
             automaticallyImplyLeading: false,
             title: Text(
