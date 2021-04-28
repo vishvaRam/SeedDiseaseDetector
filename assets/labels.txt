@@ -1,0 +1,5 @@
+0 good
+1 worst
+2 excellent
+3 average
+4 bad

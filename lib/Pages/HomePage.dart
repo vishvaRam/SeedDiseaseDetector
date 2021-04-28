@@ -7,6 +7,13 @@ import '../Pages/ResultPage.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../JsonDecode.dart';
 
+// Clearing the cached image in app directory
+Future<void> deletePicture(String path) async {
+  final dir = File(path);
+  dir.delete(recursive: true);
+  print("Deleted");
+}
+
 Future<bool> setThemeData(bool local) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   var res = await prefs.setBool("theme", local);
@@ -49,7 +56,7 @@ Widget homePageDrawer({bool isDark, setTheme}) {
                 icon: Icon(Icons.open_in_new),
                 onPressed: () async {
                   String baseURL =
-                      "https://www.instagram.com/vishva_photography1/";
+                      "https://www.instagram.com/backbenchdevelopers/";
                   if (await canLaunch(baseURL)) {
                     await launch(baseURL);
                   } else {
@@ -81,7 +88,7 @@ Widget homePageAppBar(context, {bool isDark}) {
     centerTitle: true,
     automaticallyImplyLeading: false,
     title: Text(
-      "Tomato Disease Detector",
+      "Seed Disease Detector",
       style: TextStyle(fontSize: 24.0),
     ),
     // backgroundColor: Colors.transparent,
@@ -132,7 +139,7 @@ class _MainContentState extends State<MainContent> {
     print("RunOnImage :" + path);
 
     try {
-      loadModel(context, "assets/mobile.tflite", "assets/Lable.txt",
+      loadModel(context, "assets/mobile.tflite", "assets/labels.txt",
           'Image is not clear to detect!');
 
       var recognitions = await Tflite.runModelOnImage(
@@ -202,38 +209,43 @@ class _MainContentState extends State<MainContent> {
           widget.imgPath = image.path;
         });
 
-        try {
-          loadModel(context, "assets/tomatoOrother.tflite",
-              "assets/TomatoOrotherlabels.txt", 'Select a leaf image!');
-          var firstModel = await Tflite.runModelOnImage(
-              path: widget.imgPath,
-              numResults: 1,
-              imageMean: 0.001,
-              imageStd: 255);
+        // try {
+        //   loadModel(context, "assets/tomatoOrother.tflite",
+        //       "assets/TomatoOrotherlabels.txt", 'Select a leaf image!');
+        //   var firstModel = await Tflite.runModelOnImage(
+        //       path: widget.imgPath,
+        //       numResults: 1,
+        //       imageMean: 0.001,
+        //       imageStd: 255);
+        //
+        //   if (firstModel != null) {
+        //     ResponseList resList = ResponseList.fromJson(firstModel);
+        //     print(resList.listOfResponse[0].label);
+        //
+        //     int confi = (resList.listOfResponse[0].confidence * 100).toInt();
+        //
+        //     print(confi.toString() + "%");
+        //
+        //     if (resList.listOfResponse[0].label == "Other") {
+        //       print("It is not a tomato leaf.");
+        //       final snackBar = SnackBar(content: Text('Select a leaf image!'));
+        //       Scaffold.of(context).showSnackBar(snackBar);
+        //       widget.loadingIndicator(false);
+        //       print(widget.isLoading);
+        //       deletePicture(widget.imgPath);
+        //       return;
+        //     } else {
+        //       await runOnImage(widget.imgPath);
+        //       await Tflite.close();
+        //     }
+        //   }
+        // } catch (e) {
+        //   print("Loading Model" + e);
+        // }
 
-          if (firstModel != null) {
-            ResponseList resList = ResponseList.fromJson(firstModel);
-            print(resList.listOfResponse[0].label);
+        await runOnImage(widget.imgPath);
+        await Tflite.close();
 
-            int confi = (resList.listOfResponse[0].confidence * 100).toInt();
-
-            print(confi.toString() + "%");
-
-            if (resList.listOfResponse[0].label == "Other") {
-              print("It is not a tomato leaf.");
-              final snackBar = SnackBar(content: Text('Select a leaf image!'));
-              Scaffold.of(context).showSnackBar(snackBar);
-              widget.loadingIndicator(false);
-              print(widget.isLoading);
-              return;
-            } else {
-              await runOnImage(widget.imgPath);
-              await Tflite.close();
-            }
-          }
-        } catch (e) {
-          print("Loading Model" + e);
-        }
       } else {
         final snackBar = SnackBar(content: Text('No image selected!'));
         Scaffold.of(context).showSnackBar(snackBar);
