@@ -290,6 +290,8 @@ class _MainContentState extends State<MainContent> {
                   Flexible(
                       flex: 1,
                       child: RaisedButton.icon(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30)),
                         onPressed: () async {
                           onClick(ImageSource.camera);
                           widget.loadingIndicator(false);
@@ -298,27 +300,35 @@ class _MainContentState extends State<MainContent> {
                         icon: Icon(
                           Icons.camera_alt,
                           color: Colors.white,
-                          size: 26.0,
+                          size: 28.0,
                         ),
-                        label: Text("Camera",
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 18.0)),
+                        label: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text("Camera",
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 24.0)),
+                        ),
                         color: Colors.blue,
                       )),
                   Flexible(
                       flex: 1,
                       child: RaisedButton.icon(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30)),
                         onPressed: () async {
                           onClick(ImageSource.gallery);
                         },
                         icon: Icon(
                           Icons.image,
                           color: Colors.white,
-                          size: 26.0,
+                          size: 28.0,
                         ),
-                        label: Text(
-                          "Gallery",
-                          style: TextStyle(color: Colors.white, fontSize: 18.0),
+                        label: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "Gallery",
+                            style: TextStyle(color: Colors.white, fontSize: 24.0),
+                          ),
                         ),
                         color: Colors.blue,
                       )),

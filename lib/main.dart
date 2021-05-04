@@ -11,7 +11,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
 
-  bool isDark = false;
+  bool isDark = true;
 
   Future<bool> getThemeData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
