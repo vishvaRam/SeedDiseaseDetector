@@ -1,5 +1,4 @@
-0 good
-1 worst
-2 excellent
-3 average
-4 bad
+0 Blight
+1 Common_Rust
+2 Grey_Leaf_spot
+3 Healthy

@@ -30,41 +30,40 @@ class _ResultPageState extends State<ResultPage> {
     print("In Result Page: "+widget.lable);
 
     switch (widget.lable) {
-      case "0 good":
+      case "0 Blight":
         setState(() {
-          result = "good";
+          result = "Blight";
           cure =
-              "good!";
+              "Fungicides. Foliar fungicides may be applied early in the growing season to corn seedlings as a risk-management tool for northern corn leaf blight and other corn diseases, including anthracnose leaf blight and corn eyespot.";
         });
         break;
-      case "1 worst":
+      case "1 Common_Rust":
         setState(() {
-          result = "worst";
+          result = "Common Rust";
           cure =
-              "worst";
+              "Numerous fungicides are available for rust control. Products containing mancozeb, pyraclostrobin, pyraclostrobin + metconazole, pyraclostrobin + fluxapyroxad, azoxystrobin + propiconazole, trifloxystrobin + prothioconazole can be used to control the disease.";
         });
         break;
-      case "2 excellent":
+      case "2 Grey_Leaf_spot":
         setState(() {
-          result = "excellent";
+          result = "Grey Leaf spot";
           cure =
-              "excellent";
+              "Foliar fungicide treatment is a way to manage the disease if it occurs at early stages but it has to be weighed against the weather conditions, the potential yield loss and the susceptible of the plant. Fungicides containing pyraclostrobin and strobilurin or combinations of azoxystrobin and propiconazole, prothiofonazole and trifloxtstrobin work well to control the fungus.";
         });
         break;
-      case "3 average":
+      case "3 Healthy":
         setState(() {
-          result = "average";
+          result = "Healthy";
           cure =
-              "average";
+              "Nothing to worry about!";
         });
         break;
-      case "4 bad":
-        setState(() {
-          result = "bad";
+      default:
+        setState((){
+          result = "Strange";
           cure =
-              "bad";
+          "Some thing is Strange";
         });
-        break;
     }
 
     setState(() {
